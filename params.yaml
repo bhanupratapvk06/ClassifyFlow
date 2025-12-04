@@ -1,0 +1,10 @@
+data_ingestion:
+  test_size: 0.20
+
+feature_engineering:
+  max_features: 5000
+
+model_training:
+  kernel: linear
+  C: 1.0
+  random_state: 42

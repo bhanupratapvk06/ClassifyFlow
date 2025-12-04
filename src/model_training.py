@@ -1,5 +1,6 @@
 import os
 import sys
+import yaml 
 import pickle
 import pandas as pd
 import numpy as np
@@ -11,6 +12,22 @@ from utils.logger import create_logger
 
 logger = create_logger('model_training')
 
+def load_params(params_path: str) -> dict:
+    """Load parameters from a YAML file."""
+    try:
+        with open(params_path, 'r') as file:
+            params = yaml.safe_load(file)
+        logger.debug('Parameters retrieved from %s', params_path)
+        return params
+    except FileNotFoundError:
+        logger.error('File not found: %s', params_path)
+        raise
+    except yaml.YAMLError as e:
+        logger.error('YAML error: %s', e)
+        raise
+    except Exception as e:
+        logger.error('Unexpected error: %s', e)
+        raise
 
 def load_data(data_url: str, target_column: str = 'category') -> tuple[np.ndarray, np.ndarray]:
     """Load CSV data and separate features and target."""
@@ -54,13 +71,10 @@ def save_model(model: SVC, file_path: str) -> None:
 def main():
     try:
         train_file = './data/features/train_tfidf.csv'
-        test_file = './data/features/test_tfidf.csv'
         model_file = './models/svc_model.pkl'
-
-
+        params = load_params('params.yaml')['model_training']
         X_train, y_train = load_data(train_file)
 
-        params = {'kernel': 'linear', 'C': 1.0, 'random_state': 42}
         model = train_model(X_train, y_train, params=params)
 
 

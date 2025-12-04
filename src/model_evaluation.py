@@ -3,12 +3,31 @@ import sys
 import pickle
 import json
 import pandas as pd
+import yaml
+from dvclive import Live
 from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.logger import create_logger
 
 logger = create_logger('model_evaluation')
+
+def load_params(params_path: str) -> dict:
+    """Load parameters from a YAML file."""
+    try:
+        with open(params_path, 'r') as file:
+            params = yaml.safe_load(file)
+        logger.debug('Parameters retrieved from %s', params_path)
+        return params
+    except FileNotFoundError:
+        logger.error('File not found: %s', params_path)
+        raise
+    except yaml.YAMLError as e:
+        logger.error('YAML error: %s', e)
+        raise
+    except Exception as e:
+        logger.error('Unexpected error: %s', e)
+        raise
 
 
 def load_model(file_path: str):
@@ -82,13 +101,19 @@ def main():
         model_file = './models/svc_model.pkl'
         test_file = './data/features/test_tfidf.csv'
         metrics_file = './reports/evaluation_metrics.json'
-
+        params = load_params(params_path='params.yaml')
         model = load_model(model_file)
         test_df = load_data(test_file)
         X_test = test_df.drop('category', axis=1).values
         y_test = test_df['category'].values
 
         metrics = evaluate_model(model, X_test, y_test)
+        with Live(save_dvc_exp=True) as live:
+            live.log_metric('accuracy', accuracy_score(y_test, y_test))
+            live.log_metric('precision', precision_score(y_test, y_test))
+            live.log_metric('recall', recall_score(y_test, y_test))
+
+            live.log_params(params)
         save_metrics(metrics, metrics_file)
 
         logger.debug("Model evaluation pipeline completed successfully.")
