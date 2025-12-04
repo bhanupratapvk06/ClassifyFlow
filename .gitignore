@@ -17,6 +17,7 @@ ENV/
 
 # DVC
 .dvc/
+!.dvc          # Track the .dvc folder itself
 *.dvc
 data/
 models/
